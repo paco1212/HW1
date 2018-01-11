@@ -2,23 +2,107 @@
 ## SI 364 W18
 ## 1000 points
 
+# Francisco "Paco" Gallardo
+# SI 364 - Building Interactive Applications 
+# Univesity of Michigan School of Information
 #################################
 
 ## List below here, in a comment/comments, the people you worked with on this assignment AND any resources you used to find code (50 point deduction for not doing so). If none, write "None".
 
-
+# None - so far
 
 ## [PROBLEM 1] - 150 points
 ## Below is code for one of the simplest possible Flask applications. Edit the code so that once you run this application locally and go to the URL 'http://localhost:5000/class', you see a page that says "Welcome to SI 364!"
 
-from flask import Flask
+from flask import Flask, request
+import json
+import requests
+
 app = Flask(__name__)
 app.debug = True
 
+# Default home page
 @app.route('/')
 def hello_to_you():
-    return 'Hello!'
+    return 'Hello World!'
 
+# Problem 1
+# Decorator function
+@app.route('/class')
+# When this link is accessed, call this function and display the return statement on the page
+def class_364():
+    return 'Welcome to SI 364!'
+
+
+
+# Problem 2
+# Decorator function
+@app.route('/movie/<title>')
+# When think link is accessed using a movie name,
+# make a request to the iTunes API and 
+# Display the results of the movie searched for on the page
+def movie(title):
+	baseurl = "https://itunes.apple.com/search" # iTunes API url
+	data = requests.get(baseurl, params = {"term": title, "entity": "movie"}) # Making a requests to iTunes API
+	text = (data.text) # Saving text from response object to new variable
+	return text # Display the text from response object on the page
+	
+
+# Problem 3
+# Decorator Function
+@app.route('/question')
+# When this link is accessed, display an HTML form that asks the user to submit their favorite number
+def pregunta():
+	s = """<!DOCTYPE html>
+<html>
+<body>
+<form  action="/answer" method='POST'>
+  What is your favorite number:<br>
+  <input type="text" name="number" value=""> 
+  <br>
+  <input type="submit" value="Submit">
+</form>
+</body>
+</html>"""
+	return s
+
+# Problem 3 continued
+# When the user submits their favorite number to the previous page,
+# Then attempt to cast the information submitted into a string. If it works, then multiple the number 
+# by 2 and display it on the screen
+# If I cannot cast the string as an integer, then display an error message on this new page
+@app.route('/answer', methods = ['POST', 'GET'])
+def respuesta():
+	# To find out if the user submitted a number, try to cast it as a string and multiply it
+	# If a number, then display a message and the new number
+	try:
+		text = request.form["number"]
+		number = int(text)
+		double = number * 2
+		return "Double your favorite number is {}".format(double)
+	# If not a number, display a message on the page that tells user that they did not submit a number
+	except:
+		return "You did not input a number"
+	
+
+
+# Problem 4
+@app.route("/problem4form")
+def form():
+	pass
+# 	s = """<!DOCTYPE html>
+# <html>
+# <body>
+# <form>
+#   What is your favorite number:<br>
+#   <input type="text" name="number" value="">
+#   <br>
+#   <input type="submit" value="Submit">
+# </form>
+# </body>
+# </html>"""
+# # Note that by default eggs would be entered in the input field
+# 	return s
 
 if __name__ == '__main__':
     app.run()
