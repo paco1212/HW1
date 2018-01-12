@@ -146,11 +146,11 @@ def response():
 			forecast_obj = json.loads(forecast_data.text)
 		
 		except:
-			return "Cannot display results for {},{}".format(city_query, state)
+			return "Cannot display results for {}, {}".format(city_query, state)
 
 		degree = str(forecast_obj[0]["Temperature"]["Value"])
 		unit = str(forecast_obj[0]["Temperature"]["Unit"])
-		final = "The current weather of {},{} is: {}{}".format(city_query, state, degree,unit)
+		final = "The current weather of {}, {} is: {}{}".format(city_query, state, degree,unit)
 
 	elif hour_preference == 12:
 		forecast_url += "/12hour/"
@@ -161,12 +161,12 @@ def response():
 			forecast_obj = json.loads(forecast_data.text)
 		
 		except:
-			return "Cannot display results for {},{}".format(city_query, state)
+			return "Cannot display results for {}, {}".format(city_query, state)
 
 		temp_values = []
 		for dic in forecast_obj:
 			temp_values.append(dic["Temperature"]["Value"])
-		final = "The current weather of {},{} is: {}F<br><br>".format(city_query, state,temp_values[0])
+		final = "The current weather of {}, {} is: {}F<br><br>".format(city_query, state,temp_values[0])
 		string = ""
 		for i in range(1,12):
 			string += "Temperature in {} hours: {}F<br><br>".format(str(i), temp_values[i])
@@ -179,7 +179,7 @@ def response():
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(use_reloader=True, debug=True)
 
 
 ## [PROBLEM 2] - 250 points
