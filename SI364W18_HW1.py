@@ -9,7 +9,18 @@
 
 ## List below here, in a comment/comments, the people you worked with on this assignment AND any resources you used to find code (50 point deduction for not doing so). If none, write "None".
 
-# None - so far
+# None 
+
+# ****** NOTE ******* #
+# In order for you to run my program, you need to create and API key from accuweather
+# The link to the website is: https://developer.accuweather.com/
+# You need to create an account then on the right hand corner of the page, hover over your email
+# Then click on "My Apps". Once you click on that, you need to create and app and fill out the form.
+# Once you are done, then you need to create a python file called "accuweather.py" and 
+# create a variable called apikey. Assign the variable apikey to be the string value of your api key that you created.
+# After that, save the accuweather api file in the same directory that you have this file saved under.
+# You are done and ready to run my project :)
+# Have fun!
 
 ## [PROBLEM 1] - 150 points
 ## Below is code for one of the simplest possible Flask applications. Edit the code so that once you run this application locally and go to the URL 'http://localhost:5000/class', you see a page that says "Welcome to SI 364!"
@@ -17,6 +28,7 @@
 from flask import Flask, request
 import json
 import requests
+from accuweather import apikey
 
 app = Flask(__name__)
 app.debug = True
@@ -89,20 +101,81 @@ def respuesta():
 # Problem 4
 @app.route("/problem4form")
 def form():
-	pass
-# 	s = """<!DOCTYPE html>
-# <html>
-# <body>
-# <form>
-#   What is your favorite number:<br>
-#   <input type="text" name="number" value="">
-#   <br>
-#   <input type="submit" value="Submit">
-# </form>
-# </body>
-# </html>"""
-# # Note that by default eggs would be entered in the input field
-# 	return s
+	# pass
+	form = '''<!Documentation html>
+	<html>
+	<body>
+	<form action="/problem4response" method="POST">
+	<input type="text" name="search_query" value=""> Enter a city/town to get forecast:<br>
+
+	<select name="Hours">
+	<option value="1 Hour"> 1 Hour</option>
+	<option value="12 Hours"> 12 Hours</option>
+
+
+
+	<input type="submit" value="Submit">
+
+	</form>
+	</body>
+	</html>'''
+	return form
+
+@app.route("/problem4response", methods = ["POST", "GET"])
+def response():
+	location_url = "http://dataservice.accuweather.com/locations/v1/cities/search"
+	city_query = request.form["search_query"]
+	hour_selection = request.form["Hours"].split()
+	hour_preference = int(hour_selection[0])
+	try:
+		location_data = requests.get(location_url, params = {"apikey": apikey, "q":city_query})
+		obj = json.loads(location_data.text)
+		city = str(obj[0]["Key"])
+		state = str(obj[0]["AdministrativeArea"]["EnglishName"])
+	except:
+		return "Not a valid city"
+
+	forecast_url = "http://dataservice.accuweather.com/forecasts/v1/hourly/"
+	if hour_preference == 1:
+		forecast_url += "/1hour/"
+		forecast_url += city
+
+		try:
+			forecast_data = requests.get(forecast_url, params = {"apikey":apikey})
+			forecast_obj = json.loads(forecast_data.text)
+		
+		except:
+			return "Cannot display results for {},{}".format(city_query, state)
+
+		degree = str(forecast_obj[0]["Temperature"]["Value"])
+		unit = str(forecast_obj[0]["Temperature"]["Unit"])
+		final = "The current weather of {},{} is: {}{}".format(city_query, state, degree,unit)
+
+	elif hour_preference == 12:
+		forecast_url += "/12hour/"
+		forecast_url += city
+
+		try:
+			forecast_data = requests.get(forecast_url, params = {"apikey":apikey})
+			forecast_obj = json.loads(forecast_data.text)
+		
+		except:
+			return "Cannot display results for {},{}".format(city_query, state)
+
+		temp_values = []
+		for dic in forecast_obj:
+			temp_values.append(dic["Temperature"]["Value"])
+		final = "The current weather of {},{} is: {}F\n".format(city_query, state,temp_values[0])
+		string = ""
+		for i in range(1,12):
+			string += "Temperature in {} hours: {}F\n".format(str(i), temp_values[i])
+		final = final + string
+
+
+
+	return (final)
+
+
 
 if __name__ == '__main__':
     app.run()
