@@ -130,6 +130,7 @@ def response():
 	try:
 		location_data = requests.get(location_url, params = {"apikey": apikey, "q":city_query})
 		obj = json.loads(location_data.text)
+		print(obj)
 		city = str(obj[0]["Key"])
 		state = str(obj[0]["AdministrativeArea"]["EnglishName"])
 	except:
@@ -165,10 +166,10 @@ def response():
 		temp_values = []
 		for dic in forecast_obj:
 			temp_values.append(dic["Temperature"]["Value"])
-		final = "The current weather of {},{} is: {}F\n".format(city_query, state,temp_values[0])
+		final = "The current weather of {},{} is: {}F<br><br>".format(city_query, state,temp_values[0])
 		string = ""
 		for i in range(1,12):
-			string += "Temperature in {} hours: {}F\n".format(str(i), temp_values[i])
+			string += "Temperature in {} hours: {}F<br><br>".format(str(i), temp_values[i])
 		final = final + string
 
 
