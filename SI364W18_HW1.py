@@ -99,87 +99,136 @@ def respuesta():
 
 
 # Problem 4
+# Form asks users to type in the name of a city and state 
+# then User selects if they would like to see the weather for the city in the current hour or view
+# the forecesated weather of that city in for the next twelve hours
 @app.route("/problem4form")
 def form():
 	# pass
 	form = '''<!Documentation html>
 	<html>
 	<body>
-	<form action="/problem4response" method="POST">
-	<input type="text" name="search_query" value=""> Enter a city/town to get forecast:<br>
+	<div>
+	<form action="/problem4form" method="POST">
+	Enter a city/town and state to get weather forecast:<br>
+	Enter in following format : {city},{state} <br>
+	<input type="text" name="search_query" value=""> 
 
 	<select name="Hours">
 	<option value="1 Hour"> 1 Hour</option>
 	<option value="12 Hours"> 12 Hours</option>
 
-
-
 	<input type="submit" value="Submit">
 
 	</form>
 	</body>
+	</div>
 	</html>'''
 	return form
 
-@app.route("/problem4response", methods = ["POST", "GET"])
+# Function decorator
+# Respnse function when user submits a form
+@app.route("/problem4form", methods = ["POST", "GET"])
 def response():
-	location_url = "http://dataservice.accuweather.com/locations/v1/cities/search"
-	city_query = request.form["search_query"]
-	hour_selection = request.form["Hours"].split()
-	hour_preference = int(hour_selection[0])
-	try:
-		location_data = requests.get(location_url, params = {"apikey": apikey, "q":city_query})
-		obj = json.loads(location_data.text)
-		print(obj)
-		city = str(obj[0]["Key"])
-		state = str(obj[0]["AdministrativeArea"]["EnglishName"])
-	except:
-		return "Not a valid city"
 
-	forecast_url = "http://dataservice.accuweather.com/forecasts/v1/hourly/"
-	if hour_preference == 1:
-		forecast_url += "/1hour/"
-		forecast_url += city
+	# Form that will always display
 
+	form = '''<!Documentation html>
+		<html>
+		<body>
+		<div>
+		<form action="/problem4form" method="POST">
+		Enter a city/town and state to get weather forecast:<br>
+		Enter in following format : {city},{state} <br>
+		<input type="text" name="search_query" value=""> 
+
+		<select name="Hours">
+		<option value="1 Hour"> 1 Hour</option>
+		<option value="12 Hours"> 12 Hours</option>
+
+		<input type="submit" value="Submit">
+
+		</form>
+		</body>
+		</div>
+		</html>'''
+
+	# If the form was submitted via POST format, then make a request to the Accuweather API
+	# to display the temperature of the city specified in the form
+	if request.method == "POST":
+		# Make a request to the locations API of accuwether to get key of city the user entered
+		# If not a valid city, 
+		location_url = "http://dataservice.accuweather.com/locations/v1/cities/search"
+		city_query = request.form["search_query"]
+		hour_selection = request.form["Hours"].split()
+		hour_preference = int(hour_selection[0])
 		try:
-			forecast_data = requests.get(forecast_url, params = {"apikey":apikey})
-			forecast_obj = json.loads(forecast_data.text)
-		
+			location_data = requests.get(location_url, params = {"apikey": apikey, "q":city_query})
+			obj = json.loads(location_data.text)
+			city = str(obj[0]["Key"])
+			state = str(obj[0]["AdministrativeArea"]["EnglishName"])
+
+		# If I cannot get a result, then  say so, display the form and dispay the error message from the request
 		except:
-			return "Cannot display results for {}, {}".format(city_query, state)
+			return form + "Not a valid city <br><br>" + location_data.text
 
-		degree = str(forecast_obj[0]["Temperature"]["Value"])
-		unit = str(forecast_obj[0]["Temperature"]["Unit"])
-		final = "The current weather of {}, {} is: {}{}".format(city_query, state, degree,unit)
+		# if user selected 1 hour, then make  request to the Accuwether api, hourly forecast API
+		# Disply the results underneathe the form
+		forecast_url = "http://dataservice.accuweather.com/forecasts/v1/hourly/"
+		if hour_preference == 1:
+			forecast_url += "/1hour/"
+			forecast_url += city
 
-	elif hour_preference == 12:
-		forecast_url += "/12hour/"
-		forecast_url += city
+			try:
+				forecast_data = requests.get(forecast_url, params = {"apikey":apikey})
+				forecast_obj = json.loads(forecast_data.text)
+			
+			except:
+				return form + "Cannot display results for {}, {} <br><br>".format(city_query, state) + forecast_data.text
 
-		try:
-			forecast_data = requests.get(forecast_url, params = {"apikey":apikey})
-			forecast_obj = json.loads(forecast_data.text)
+			degree = str(float(forecast_obj[0]["Temperature"]["Value"]))
+			unit = str(forecast_obj[0]["Temperature"]["Unit"])
+			weather_string = "The current weather of {}, {} is: {}{}".format(city_query, state, degree,unit)
+
+		# if user selected 12 hour, then make  request to the Accuwether api, 12-hour forecast API
+		# Disply the results underneathe the form
+		elif hour_preference == 12:
+			forecast_url += "/12hour/"
+			forecast_url += city
+
+			try:
+				forecast_data = requests.get(forecast_url, params = {"apikey":apikey})
+				forecast_obj = json.loads(forecast_data.text)
+			
+			except:
+				return form + "Cannot display results for {}, {}".format(city_query, state)
+
+			temp_values = []
+			for dic in forecast_obj:
+				temp_values.append(float(dic["Temperature"]["Value"]))
+
+			weather_string = "The current weather of {}, {} is: {}F<br><br>".format(city_query, state,temp_values[0])
+			string = ""
+			for i in range(1,12):
+				string += "Temperature in {} hours: {}F<br><br>".format(str(i), temp_values[i])
+			weather_string = weather_string + string
+
 		
-		except:
-			return "Cannot display results for {}, {}".format(city_query, state)
 
-		temp_values = []
-		for dic in forecast_obj:
-			temp_values.append(dic["Temperature"]["Value"])
-		final = "The current weather of {}, {} is: {}F<br><br>".format(city_query, state,temp_values[0])
-		string = ""
-		for i in range(1,12):
-			string += "Temperature in {} hours: {}F<br><br>".format(str(i), temp_values[i])
-		final = final + string
+		final = form + weather_string
 
 
+		return (final)
+	# If the form was not sumitted via POST method, then just display the form.
+	else:
+		return form
 
-	return (final)
 
 
 
 if __name__ == '__main__':
-    app.run(use_reloader=True, debug=True)
+	
+	app.run(use_reloader=True, debug=True)
 
 
 ## [PROBLEM 2] - 250 points
